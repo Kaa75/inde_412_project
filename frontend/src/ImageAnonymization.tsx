@@ -6,12 +6,14 @@ import './App.css';
 function ImageAnonymization() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [isAnonymized, setIsAnonymized] = useState<boolean>(false); // new state
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setSelectedFile(file);
       setImageUrl(URL.createObjectURL(file));
+      setIsAnonymized(false); // reset anonymized status on new upload
     }
   };
 
@@ -26,6 +28,7 @@ function ImageAnonymization() {
         { headers: { 'Content-Type': 'multipart/form-data', "Access-Control-Allow-Origin": "*" } }
       );
       setImageUrl(response.data.imageUrl);
+      setIsAnonymized(true); // mark image as anonymized
     } catch (error) {
       console.error(error);
       alert("Backend not connected (possibly due to CORS). Please check your connection.");
@@ -59,7 +62,7 @@ function ImageAnonymization() {
         {imageUrl && (
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
-              Anonymized Image Preview:
+              {isAnonymized ? "Anonymized Image Preview:" : "Image Preview:"}
             </Typography>
             <img
               src={imageUrl}
