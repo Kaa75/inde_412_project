@@ -6,6 +6,9 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from io import BytesIO
 import base64
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 CORS(app)
@@ -46,30 +49,32 @@ def image_anonymize():
     try:
         image_file = request.files.get("image")
         if not image_file:
+            logging.error("No image provided")
             return jsonify({"error": "No image provided"}), 400
         
         # Ensure the image is in RGB mode
         pil_image = Image.open(image_file).convert("RGB")
         redactor = ImageRedactorEngine()
         try:
-            # Try to redact the image with empty analyzer_results
-            redacted_image = redactor.redact(image=pil_image, analyzer_results=[])
+            # Fix: call redact without passing analyzer_results
+            redacted_image = redactor.redact(image=pil_image)
+            logging.info("Image redaction succeeded")
         except Exception as inner_e:
-            # If redaction fails due to Tesseract missing, instruct user
             if "tesseract" in str(inner_e).lower():
-                print("Tesseract is not installed or not in your PATH. Please install tesseract and add it to your PATH. Using original image instead.")
+                logging.error("Tesseract is not installed or not in your PATH. Using original image.")
             else:
-                print("Image redaction error:", inner_e)
+                logging.exception("Image redaction error")
             redacted_image = pil_image
         
         buffered = BytesIO()
         redacted_image.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
-        img_data = f"data:image/png;base64,{img_str}"
         
+        img_data = f"data:image/png;base64,{img_str}"
         return jsonify({"imageUrl": img_data}), 200
 
     except Exception as e:
+        logging.exception("Exception in image-anonymize endpoint")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":

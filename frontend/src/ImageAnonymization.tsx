@@ -24,8 +24,7 @@ function ImageAnonymization() {
     try {
       const response = await axios.post(
         'http://127.0.0.1:8765/image-anonymize',
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data', "Access-Control-Allow-Origin": "*" } }
+        formData
       );
       setImageUrl(response.data.imageUrl);
       setIsAnonymized(true); // mark image as anonymized
